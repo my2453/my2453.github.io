@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SJ 업무지원 포털</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Malgun Gothic',sans-serif;background:#f5f6f8;}
+/* 탑바 */
+#topbar{height:50px;background:#fff;border-bottom:2px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+#topbar .brand{font-size:13px;font-weight:800;color:#0b111e;padding-right:16px;border-right:1px solid #e5e7eb;margin-right:4px;}
+#topbar .tabs{display:flex;height:100%;overflow:hidden;}
+.tab{height:50px;padding:0 14px;background:none;border:none;border-bottom:2.5px solid transparent;font-size:12.5px;font-weight:600;color:#6b7280;cursor:pointer;white-space:nowrap;margin-bottom:-2px;}
+.tab:hover{color:#374151;}
+.tab.on{color:#0b111e;border-bottom-color:#052f67;font-weight:700;}
+#closeBtn{height:32px;padding:0 14px;background:#0b111e;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+#closeBtn:hover{background:#c53030;}
+/* 패널 공통 */
+.panel{display:none;}
+.panel.on{display:block;}
+/* MAP 패널 */
+#mapPanel{display:none;height:calc(100vh - 50px);flex-direction:column;}
+#mapPanel.on{display:flex;}
+/* 필터바 */
+#filterbar{height:50px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;padding:0 10px;gap:0;flex-shrink:0;overflow:hidden;}
+#filterbar input,#filterbar select{height:32px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12.5px;font-family:inherit;outline:none;background:#fff;padding:0 8px;}
+#filterbar input:focus,#filterbar select:focus{border-color:#052f67;}
+.fb-addr{display:flex;align-items:center;gap:5px;padding-right:10px;flex-shrink:0;}
+.fb-addr input{width:130px;background:#f9fafb;}
+.fb-divider{width:1px;height:28px;background:#e5e7eb;margin:0 8px;flex-shrink:0;}
+.fb-sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;padding-right:20px!important;cursor:pointer;margin-right:5px;flex-shrink:0;}
+.fb-search-wrap{position:relative;flex:1;min-width:100px;max-width:200px;}
+.fb-search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);pointer-events:none;}
+.fb-search-wrap input{width:100%;padding-left:26px;border-radius:7px 0 0 7px;}
+.fb-search-wrap input:focus{border-color:#052f67;}
+.btn{height:32px;padding:0 12px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;}
+.btn-navy{background:#0b111e;color:#c8a96e;border-radius:0;}
+.btn-ghost{background:#f3f4f6;color:#6b7280;border:1.5px solid #e5e7eb;border-left:none;border-radius:0 7px 7px 0;font-weight:600;margin-right:8px;}
+.btn-add{background:#fef9f0;color:#b45309;border:1.5px solid #fcd34d;margin-right:6px;}
+.btn-csv{background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;}
+.btn-move{background:#052f67;color:#fff;}
+.btn-cad{background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe;}
+.btn-cad.on{background:#1d4ed8;color:#fff;}
+#stat{font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap;flex-shrink:0;margin-right:8px;}
+/* 지도 레이아웃 */
+#mapLayout{flex:1;display:flex;overflow:hidden;min-height:0;}
+#mapWrap{flex:1;position:relative;min-width:0;}
+#map{width:100%;height:100%;}
+/* 지도 타입 컨트롤 */
+#mapCtrl{position:absolute;top:10px;right:10px;z-index:200;display:flex;border-radius:7px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+#mapCtrl button{height:32px;padding:0 12px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+#mapCtrl button:not(:last-child){border-right:1px solid rgba(0,0,0,.1);}
+#btnNormal{background:#0b111e;color:#fff;font-weight:700;}
+#btnSky{background:#fff;color:#374151;}
+#btnCad{background:#fff;color:#374151;}
+#btnCad.on{background:#1d4ed8;color:#fff;}
+/* geocode 진행 */
+#geoProgress{display:none;position:absolute;bottom:58px;left:50%;transform:translateX(-50%);background:rgba(11,17,30,.85);color:#c8a96e;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;pointer-events:none;white-space:nowrap;z-index:200;}
+/* 사이드바 */
+#sidebar{width:360px;flex-shrink:0;background:#fff;border-left:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;}
+#sideHead{padding:9px 14px;border-bottom:1px solid #e5e7eb;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;background:#f9fafb;font-size:12.5px;font-weight:700;color:#111;}
+#listBody{flex:1;overflow-y:auto;}
+#listBody::-webkit-scrollbar{width:4px;}
+#listBody::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px;}
+/* 리스트 아이템 */
+.li{padding:10px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;display:flex;align-items:flex-start;gap:9px;transition:background .1s;}
+.li:hover{background:#fef9f9;}
+.li.on{background:#fff5f5;border-left:3px solid #e53e3e;}
+.dot{width:8px;height:8px;min-width:8px;border-radius:50%;background:#e53e3e;margin-top:5px;}
+.li-body{flex:1;min-width:0;}
+.addr{font-size:12px;font-weight:600;color:#111;line-height:1.55;word-break:keep-all;}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:4px;background:#fff1f1;color:#c53030;margin-top:3px;}
+.badge-new{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;margin-left:4px;}
+.del,.edit{opacity:0;font-size:11px;color:#9ca3af;cursor:pointer;padding:2px 5px;border-radius:3px;flex-shrink:0;background:none;border:none;font-family:inherit;}
+.li:hover .del,.li:hover .edit{opacity:1;}
+.del:hover{color:#ef4444!important;background:#fee2e2;}
+.edit:hover{color:#052f67!important;background:#eff6ff;}
+/* 추가 입력 */
+#addPanel{display:none;padding:8px 12px;background:#fafafa;border-bottom:1px solid #e5e7eb;flex-shrink:0;}
+#addPanel .inner{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+#addPanel input{height:32px;padding:0 10px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;outline:none;}
+#addPanel input:focus{border-color:#052f67;}
+/* 팝업 */
+.pop{background:#fff;border-radius:10px;padding:12px 15px;min-width:210px;max-width:290px;box-shadow:0 6px 20px rgba(0,0,0,.15);border-top:3px solid #e53e3e;font-family:'Malgun Gothic',sans-serif;}
+.pop-addr{font-size:12.5px;font-weight:700;color:#111;word-break:keep-all;line-height:1.55;margin-bottom:4px;}
+.pop-memo{display:inline-block;font-size:11px;font-weight:700;color:#c53030;background:#fff1f1;padding:2px 8px;border-radius:4px;margin-bottom:6px;}
+.pop-btns{margin-top:8px;padding-top:7px;border-top:1px solid #f3f4f6;display:flex;gap:5px;align-items:center;}
+.pop-copy{font-size:11px;color:#374151;background:#f3f4f6;border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-weight:600;font-family:inherit;}
+.pop-kakao{font-size:11px;color:#1d4ed8;background:#eff6ff;border-radius:4px;padding:3px 9px;text-decoration:none;font-weight:600;}
+.pop-eum{font-size:11px;color:#b45309;background:#fef9f0;border-radius:4px;padding:3px 9px;text-decoration:none;font-weight:600;}
+.pop-close{font-size:16px;color:#9ca3af;background:none;border:none;cursor:pointer;margin-left:auto;line-height:1;padding:0 4px;font-family:inherit;}
+/* 업무포털 패널 */
+#linksPanel{padding:24px 32px;}
+#linksPanel h2{font-size:18px;font-weight:800;color:#0b111e;margin-bottom:4px;}
+#linksPanel p{font-size:12.5px;color:#6b7280;margin-bottom:22px;}
+.lgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.lsec{background:#fff;border-radius:10px;border:1px solid #e5e7eb;overflow:hidden;}
+.lcat{font-size:11px;font-weight:800;color:#0b111e;padding:11px 16px;border-bottom:2px solid #052f67;background:#f9fafb;}
+.lr{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f3f4f6;text-decoration:none;gap:10px;transition:background .1s;}
+.lr:last-child{border-bottom:none;}
+.lr:hover{background:#f5f8ff;}
+.lr b{font-size:12.5px;font-weight:700;color:#111;min-width:130px;flex-shrink:0;}
+.lr span{font-size:11px;color:#6b7280;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lr em{font-size:11px;color:#374151;white-space:nowrap;font-style:normal;flex-shrink:0;}
+/* 용역단가/계산기 패널 */
+#ratePanel,#calcPanel{padding:24px 32px;}
+#ratePanel h2,#calcPanel h2{font-size:18px;font-weight:800;color:#0b111e;margin-bottom:4px;}
+#ratePanel p,#calcPanel p{font-size:12.5px;color:#6b7280;margin-bottom:22px;}
+.cgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.card{background:#fff;border-radius:10px;border:1px solid #e5e7eb;overflow:hidden;}
+.card-title{font-size:12px;font-weight:800;color:#0b111e;padding:11px 16px;border-bottom:2px solid #00a8ff;background:#f9fafb;}
+.card-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.calc-row{display:flex;align-items:center;gap:10px;}
+.calc-row label{font-size:12px;color:#374151;font-weight:600;min-width:110px;flex-shrink:0;}
+.calc-row input{flex:1;height:32px;padding:0 10px;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:7px;font-size:13px;font-family:inherit;outline:none;color:#111;}
+.calc-row input:focus{border-color:#052f67;background:#fff;}
+.calc-result{background:#f9fafb;border-radius:7px;padding:8px 12px;display:flex;justify-content:space-around;}
+.calc-result span{font-size:12px;color:#374151;font-weight:600;}
+.calc-result strong{color:#052f67;font-size:14px;}
+.result-input{background:#f0f9ff!important;color:#052f67!important;font-weight:700!important;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{padding:8px 10px;border-bottom:2px solid #e5e7eb;text-align:left;font-weight:700;color:#374151;background:#f9fafb;}
+td{padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#111;}
+tr:last-child td{border-bottom:none;}
+</style>
+</head>
+<body>
+
+<!-- 탑바 -->
+<div id="topbar">
+  <div style="display:flex;align-items:center;height:100%;">
+    <span class="brand">SJ 업무지원</span>
+    <div class="tabs">
+      <button class="tab on" onclick="sw('map')">SJ Map</button>
+      <button class="tab" onclick="sw('links')">업무포털</button>
+      <button class="tab" onclick="sw('rate')">용역단가</button>
+      <button class="tab" onclick="sw('calc')">계산기</button>
+    </div>
+  </div>
+  <button id="closeBtn" onclick="history.back()">✕ 닫기</button>
+</div>
+
+<!-- MAP 패널 -->
+<div id="mapPanel" class="on">
+  <!-- 필터바 -->
+  <div id="filterbar">
+    <div class="fb-addr">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <input id="mapSearch" placeholder="주소·이동" onkeydown="if(event.key==='Enter')goAddr()">
+      <button class="btn btn-move" onclick="goAddr()">이동</button>
+    </div>
+    <div class="fb-divider"></div>
+    <select id="selSido" class="fb-sel" onchange="updateSigun();doFilter()" style="min-width:85px;">
+      <option value="">시·도 전체</option>
+      <option>서울특별시</option><option>경기도</option><option>인천광역시</option><option>강원도</option>
+      <option>충청북도</option><option>충청남도</option><option>대전광역시</option><option>세종특별자치시</option>
+      <option>전라북도</option><option>전라남도</option><option>광주광역시</option>
+      <option>경상북도</option><option>경상남도</option><option>부산광역시</option><option>제주특별자치도</option>
+    </select>
+    <select id="selSigun" class="fb-sel" onchange="doFilter()" style="display:none;min-width:80px;"></select>
+    <select id="selType" class="fb-sel" onchange="doFilter()" style="min-width:80px;">
+      <option value="">용도 전체</option>
+      <option>공동주택</option><option>공장</option><option>골프</option><option>근린생활시설</option>
+      <option>단독주택</option><option>농가주택</option><option>도시개발사업</option><option>물류창고</option>
+      <option>산업단지</option><option>전원주택단지</option><option>중단</option><option>태양광</option>
+      <option>폐기물처리시설</option><option>기타</option>
+    </select>
+    <div class="fb-search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="kw" placeholder="주소·메모 검색" onkeydown="if(event.key==='Enter')doFilter()">
+    </div>
+    <button class="btn btn-navy" onclick="doFilter()">검색</button>
+    <button class="btn btn-ghost" onclick="doReset()">초기화</button>
+    <span id="stat"></span>
+    <button class="btn btn-add" onclick="toggleAdd()">＋추가</button>
+    <button class="btn btn-csv" onclick="exportCSV()">↓내보내기</button>
+  </div>
+  <!-- 추가 입력 -->
+  <div id="addPanel">
+    <div class="inner">
+      <span style="font-size:12px;font-weight:700;color:#374151;">📍 위치 추가</span>
+      <input id="addAddr" placeholder="주소 (예: 천안시 동남구 구룡동 1-1)" style="flex:2;min-width:200px;">
+      <input id="addMemo" placeholder="용도·메모" style="flex:1;min-width:100px;">
+      <button class="btn" style="background:#052f67;color:#fff;" onclick="doAdd()">추가</button>
+      <button class="btn btn-ghost" style="border-radius:7px;border:1.5px solid #e5e7eb;" onclick="toggleAdd()">취소</button>
+    </div>
+  </div>
+  <!-- 지도+사이드 -->
+  <div id="mapLayout">
+    <div id="mapWrap">
+      <div id="map"></div>
+      <div id="mapCtrl">
+        <button id="btnNormal" onclick="setType('normal')">지도</button>
+        <button id="btnSky" onclick="setType('sky')">스카이뷰</button>
+        <button id="btnCad" onclick="toggleCad()">지적도</button>
+      </div>
+      <div id="geoProgress">좌표 획득 중... <span id="geoText"></span></div>
+    </div>
+    <div id="sidebar">
+      <div id="sideHead">
+        <span id="listCount"></span>
+        <span style="font-size:11px;color:#9ca3af;">클릭 → 지도 이동</span>
+      </div>
+      <div id="listBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 업무포털 패널 -->
+<div id="linksPanel" class="panel">
+  <h2>업무 포털</h2>
+  <p>인허가·법규·공간정보·행정 업무에 필요한 전문 사이트 모음</p>
+  <div class="lgrid">
+<div class="lsec"><div class="lcat" style="border-color:#052f67">A. 법률·인허가</div><a href="https://www.law.go.kr" target="_blank" class="lr"><b>법제처</b><span>법령 원문 검색 및 법령해석</span><em>law.go.kr</em></a>
+<a href="https://www.eum.go.kr" target="_blank" class="lr"><b>토지이음</b><span>용도지역·행위제한 즉시 확인</span><em>eum.go.kr</em></a>
+<a href="http://kras.chungnam.go.kr/land_info/info/baseInfo/baseInfo.do" target="_blank" class="lr"><b>일사편리 (충남)</b><span>충남 토지·건축물 대장 발급</span><em>kras.chungnam.go.kr</em></a>
+<a href="https://www.eais.go.kr" target="_blank" class="lr"><b>건축행정시스템 세움터</b><span>건축인허가 현황·도면 조회</span><em>eais.go.kr</em></a>
+<a href="https://www.epeople.go.kr" target="_blank" class="lr"><b>국민신문고</b><span>행정 민원·신고·제안</span><em>epeople.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#052f67">B. 기술기준·설계</div><a href="https://www.kcsc.re.kr" target="_blank" class="lr"><b>국가건설기준센터</b><span>설계기준 및 표준시방서</span><em>kcsc.re.kr</em></a>
+<a href="https://www.molit.go.kr" target="_blank" class="lr"><b>국토교통부</b><span>최신 고시·지침 검색</span><em>molit.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#374151">협회</div><a href="https://www.kocea.or.kr" target="_blank" class="lr"><b>건설기술인협회</b><span>경력관리·교육·인정 신청</span><em>kocea.or.kr</em></a>
+<a href="https://www.kenca.or.kr" target="_blank" class="lr"><b>한국엔지니어링협회</b><span>용역 대가기준 조회</span><em>kenca.or.kr</em></a>
+<a href="https://www.kssc.or.kr" target="_blank" class="lr"><b>한국측량협회</b><span>측량 기본단가 공표</span><em>kssc.or.kr</em></a>
+<a href="https://www.lx.or.kr" target="_blank" class="lr"><b>한국국토정보공사</b><span>지적측량·토지정보</span><em>lx.or.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#1d4ed8">C. 토지·공간정보</div><a href="https://www.vworld.kr/v4po_main.do" target="_blank" class="lr"><b>브이월드</b><span>수치지형도·정사영상·3D</span><em>vworld.kr</em></a>
+<a href="https://map.ngii.go.kr" target="_blank" class="lr"><b>국토정보플랫폼</b><span>수치지도·항공사진 다운로드</span><em>map.ngii.go.kr</em></a>
+<a href="https://cngis.chungnam.go.kr" target="_blank" class="lr"><b>충남 공간정보포털</b><span>충남 도시계획·지적 통합</span><em>cngis.chungnam.go.kr</em></a>
+<a href="https://www.nsdi.go.kr" target="_blank" class="lr"><b>국가공간정보포털</b><span>국가공간정보 통합 검색</span><em>nsdi.go.kr</em></a>
+<a href="https://www.juso.go.kr" target="_blank" class="lr"><b>도로명주소</b><span>도로명주소 검색·데이터</span><em>juso.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#1d4ed8">D. 지도서비스</div><a href="https://map.kakao.com/" target="_blank" class="lr"><b>카카오맵</b><span>로드뷰·지번검색·지적편집도</span><em>map.kakao.com</em></a>
+<a href="https://map.naver.com/" target="_blank" class="lr"><b>네이버지도</b><span>항공뷰·실시간 교통</span><em>map.naver.com</em></a>
+<a href="https://www.google.com/maps" target="_blank" class="lr"><b>구글맵</b><span>위성영상·스트리트뷰</span><em>google.com</em></a>
+<a href="https://map.vworld.kr/map/maps.do" target="_blank" class="lr"><b>브이월드 지도</b><span>지적·용도지역 레이어</span><em>map.vworld.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#7c3aed">E. 인허가접수</div><a href="https://www.ipss.go.kr" target="_blank" class="lr"><b>IPSS 산업입지정보</b><span>산업단지·공장 입지 분석</span><em>ipss.go.kr</em></a>
+<a href="https://www.factoryon.go.kr" target="_blank" class="lr"><b>팩토리온</b><span>공장설립 통합 민원</span><em>factoryon.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#059669">F. 환경·재해</div><a href="https://www.eiass.go.kr" target="_blank" class="lr"><b>환경영향평가정보</b><span>환경영향평가·소규모 협의</span><em>eiass.go.kr</em></a>
+<a href="https://egis.me.go.kr" target="_blank" class="lr"><b>환경공간정보서비스</b><span>생태자연도·보전지역</span><em>egis.me.go.kr</em></a>
+<a href="https://efine.go.kr" target="_blank" class="lr"><b>재해영향평가</b><span>사전 재해영향 검토</span><em>efine.go.kr</em></a>
+<a href="https://www.nsdis.go.kr" target="_blank" class="lr"><b>국가하수도정보</b><span>하수도·오수·우수 현황</span><em>nsdis.go.kr</em></a>
+<a href="https://www.me.go.kr" target="_blank" class="lr"><b>환경부</b><span>환경 정책·법령 통합</span><em>me.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#d97706">G. 산지·농지·개발제한</div><a href="https://www.forest.go.kr" target="_blank" class="lr"><b>산지정보시스템</b><span>산지전용·허가기준</span><em>forest.go.kr</em></a>
+<a href="https://www.agrix.go.kr" target="_blank" class="lr"><b>농지정보시스템</b><span>농지전용·진흥지역</span><em>agrix.go.kr</em></a>
+<a href="https://www.greenbelt.go.kr" target="_blank" class="lr"><b>개발제한구역정보</b><span>그린벨트 경계·허가기준</span><em>greenbelt.go.kr</em></a>
+<a href="https://www.mafra.go.kr" target="_blank" class="lr"><b>농림축산식품부</b><span>농지·농업 정책·법령</span><em>mafra.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#0891b2">H. 하천·도로·교통</div><a href="https://river.go.kr" target="_blank" class="lr"><b>하천관리지리정보</b><span>하천구역·홍수위 조회</span><em>river.go.kr</em></a>
+<a href="https://www.road.re.kr" target="_blank" class="lr"><b>도로정보시스템</b><span>도로 현황·설계기준</span><em>road.re.kr</em></a>
+<a href="https://www.ktdb.go.kr" target="_blank" class="lr"><b>국가교통데이터베이스</b><span>교통량·링크 통계</span><em>ktdb.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#b45309">I. 문화재</div><a href="https://gis.cha.go.kr" target="_blank" class="lr"><b>문화재청 GIS</b><span>현상변경 허용기준·분포</span><em>gis.cha.go.kr</em></a>
+<a href="https://www.cha.go.kr" target="_blank" class="lr"><b>문화재청</b><span>인허가·현상변경 신청</span><em>cha.go.kr</em></a>
+<a href="https://www.heritage.go.kr" target="_blank" class="lr"><b>국가문화유산포털</b><span>문화재 지정현황</span><em>heritage.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#374151">J. 기관·공공</div><a href="https://www.ex.co.kr" target="_blank" class="lr"><b>한국도로공사</b><span>고속도로 점용·교통정보</span><em>ex.co.kr</em></a>
+<a href="https://www.ekr.or.kr" target="_blank" class="lr"><b>한국농어촌공사</b><span>농어촌 용수·배수</span><em>ekr.or.kr</em></a>
+<a href="https://www.kwater.or.kr" target="_blank" class="lr"><b>한국수자원공사</b><span>수도·댐·하천</span><em>kwater.or.kr</em></a>
+<a href="https://www.lh.or.kr" target="_blank" class="lr"><b>LH 한국토지주택</b><span>토지·주택 공급</span><em>lh.or.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#6b7280">K. 공부발급·민원</div><a href="https://www.gov.kr" target="_blank" class="lr"><b>정부24</b><span>증명서·인허가 통합 포털</span><em>gov.kr</em></a>
+<a href="https://www.iros.go.kr" target="_blank" class="lr"><b>대법원 인터넷등기소</b><span>부동산·등기 열람 발급</span><em>iros.go.kr</em></a>
+<a href="https://www.hometax.go.kr" target="_blank" class="lr"><b>국세청 홈택스</b><span>세금 신고·증명서</span><em>hometax.go.kr</em></a>
+<a href="https://www.wetax.go.kr" target="_blank" class="lr"><b>위택스</b><span>지방세 신고·납부</span><em>wetax.go.kr</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#7c3aed">AI 도구</div><a href="https://gemini.google.com" target="_blank" class="lr"><b>Gemini</b><span>구글 제미나이 AI</span><em>gemini.google.com</em></a>
+<a href="https://chatgpt.com" target="_blank" class="lr"><b>ChatGPT</b><span>OpenAI GPT AI</span><em>chatgpt.com</em></a>
+<a href="https://www.perplexity.ai" target="_blank" class="lr"><b>Perplexity</b><span>검색 기반 AI</span><em>perplexity.ai</em></a>
+<a href="https://claude.ai" target="_blank" class="lr"><b>Claude</b><span>Anthropic 클로드 AI</span><em>claude.ai</em></a></div>
+<div class="lsec"><div class="lcat" style="border-color:#374151">M. 건설뉴스·정보</div><a href="https://www.engdaily.com" target="_blank" class="lr"><b>엔지니어링데일리</b><span>토목·건설 엔지니어링 뉴스</span><em>engdaily.com</em></a>
+<a href="https://www.cnews.co.kr" target="_blank" class="lr"><b>건설경제신문</b><span>건설·부동산 전문 뉴스</span><em>cnews.co.kr</em></a>
+<a href="https://www.cak.or.kr" target="_blank" class="lr"><b>대한건설협회</b><span>건설업 정보·입찰 뉴스</span><em>cak.or.kr</em></a>
+<a href="https://www.ikld.kr" target="_blank" class="lr"><b>국토일보</b><span>국토·교통·건설 전문 언론</span><em>ikld.kr</em></a></div>
+  </div>
+</div>
+
+<!-- 용역단가 패널 -->
+<div id="ratePanel" class="panel">
+  <h2>용역 단가</h2>
+  <p>측량·토목설계 기본 단가 참조표 (현장 조건에 따라 상이)</p>
+  <div class="cgrid">
+    <div class="card">
+      <div class="card-title" style="border-bottom-color:#10b981;">현황측량 (지형·지적)</div>
+      <table><thead><tr><th>규모</th><th>기준 단가</th></tr></thead><tbody>
+        <tr><td>1,000㎡ 미만</td><td>협의</td></tr>
+        <tr><td>1,000~5,000㎡</td><td>~300만원</td></tr>
+        <tr><td>5,000~1만㎡</td><td>~500만원</td></tr>
+        <tr><td>1만~3만㎡</td><td>~900만원</td></tr>
+        <tr><td>3만㎡ 이상</td><td>별도 협의</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title" style="border-bottom-color:#10b981;">토목 기본설계</div>
+      <table><thead><tr><th>용역 종류</th><th>기준 단가</th></tr></thead><tbody>
+        <tr><td>개발행위허가 (소규모)</td><td>500~800만원</td></tr>
+        <tr><td>산지전용허가</td><td>600~1,000만원</td></tr>
+        <tr><td>농지전용허가</td><td>300~600만원</td></tr>
+        <tr><td>소규모환경영향평가</td><td>700~1,500만원</td></tr>
+        <tr><td>지구단위계획 수립</td><td>별도 협의</td></tr>
+      </tbody></table>
+    </div>
+    <div style="grid-column:1/-1;"><p style="font-size:11px;color:#9ca3af;line-height:1.6;">※ 위 단가는 참고용이며, 실제 계약 시 현장 조건·난이도·협력사 단가에 따라 달라집니다.</p></div>
+  </div>
+</div>
+
+<!-- 계산기 패널 -->
+<div id="calcPanel" class="panel">
+  <h2>업무 계산기</h2>
+  <p>개발면적·건폐율·용적률·경사도 등 인허가 검토 계산</p>
+  <div class="cgrid">
+    <div class="card">
+      <div class="card-title">면적 단위 변환</div>
+      <div class="card-body">
+        <div class="calc-row"><label>㎡ (제곱미터)</label><input type="number" id="m2" placeholder="0" oninput="calcArea('m2')"></div>
+        <div class="calc-row"><label>평 (坪)</label><input type="number" id="py" placeholder="0" oninput="calcArea('py')"></div>
+        <div class="calc-row"><label>헥타르 (ha)</label><input id="ha" placeholder="-" readonly class="result-input"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">건폐율 · 용적률</div>
+      <div class="card-body">
+        <div class="calc-row"><label>대지면적 (㎡)</label><input type="number" id="land" placeholder="0" oninput="calcFAR()"></div>
+        <div class="calc-row"><label>건축면적 (㎡)</label><input type="number" id="build" placeholder="0" oninput="calcFAR()"></div>
+        <div class="calc-row"><label>연면적 (㎡)</label><input type="number" id="floor" placeholder="0" oninput="calcFAR()"></div>
+        <div class="calc-result"><span>건폐율 <strong id="bcr">-</strong>%</span><span>용적률 <strong id="far">-</strong>%</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">경사도 계산</div>
+      <div class="card-body">
+        <div class="calc-row"><label>수직높이 (m)</label><input type="number" id="sh" placeholder="0" oninput="calcSlope()"></div>
+        <div class="calc-row"><label>수평거리 (m)</label><input type="number" id="sd" placeholder="0" oninput="calcSlope()"></div>
+        <div class="calc-result"><span>경사도 <strong id="sdeg">-</strong>°</span><span>경사율 <strong id="spct">-</strong>%</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">개발행위 규모 기준</div>
+      <table><thead><tr><th>용도지역</th><th>허가면적</th></tr></thead><tbody>
+        <tr><td>도시지역 주거·상업·공업</td><td>1만㎡ 미만</td></tr>
+        <tr><td>도시지역 녹지</td><td>1만㎡ 미만</td></tr>
+        <tr><td>관리지역</td><td>3만㎡ 미만</td></tr>
+        <tr><td>농림지역</td><td>3만㎡ 미만</td></tr>
+        <tr><td>자연환경보전지역</td><td>5천㎡ 미만</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=6adf5f1268c28cfce628e84e2844ce67&libraries=services,clusterer&autoload=false"></script>
+<script>
+'use strict';
+var FJ_DATA=[{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 262-7","memo":"중단","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 374-2 (1)","memo":"해태음료","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 374-2 (2)","memo":"해태htb 증설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 566-36","memo":"골프연습장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 산 76-1","memo":"화물터미널 앞","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 산10-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 산17-6","memo":"골프연습장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구룡동 산72-1","memo":"삼보개발","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 104-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 109-7","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 188-1","memo":"골프연습장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 269-5","memo":"한전 뒤","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 490","memo":"중고차장동차매매","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 52-2","memo":"천안동남소방서 훈련소","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 산22-5","memo":"데이터센터","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구성동 산4-1","memo":"관광농원","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 00 .대흥동 63-57","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대흥동 31","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 문화동 30-20","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉명동 184","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉명동 216-8","memo":"순천향대","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉명동 343","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉명동 62-1","memo":"봉명2구역","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 사직동 212-8","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 1-12","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 102-4","memo":"정송열","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 204","memo":"C부지, 공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 252-20","memo":"골프연습장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 281-1","memo":"삼룡 1지구 지구단위구역","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 341","memo":"공동주택 야구장 주변","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 359","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 361-1","memo":"주택부지 야구장 주변","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 379-16","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 379-3,17","memo":"고광우","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 381-7","memo":"선문대학교","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 41-24","memo":"천안의료원","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 55-7","memo":"양근석","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼룡동 95-9","memo":"중기주기장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 성황동 84-3","memo":"삼남건설 서비스","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 121","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 154-6","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 154-7","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 182-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 246-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 246-21","memo":"이종용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 360","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 538-44","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 546-3","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 56-57","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 581-2","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 676-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 784-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신방동 785-61","memo":"공구상가 784-1","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신부동 172-24","memo":"세차장허가","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신부동 279-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신부동 81-1","memo":"불법건축물","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신부동283-2, 305-45 두정동490 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 안서동 241-12","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 안서동 68-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 안서동 산106-1","memo":"성불사","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 안서동 산95. 산98-86","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 안서동 산98-64. 113-2","memo":"백석대 뒤","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 동남구 안서동 산98-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 안서동 소방대 산 70","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 109-2","memo":"씨알건축","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 182-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 201-1 201-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 290-25","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 295-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 339-31","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 462-16","memo":"일봉공원","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 497-6","memo":"신방동 대형마트","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 68-8","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용곡동 89-1","memo":"현장사무소","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 원성동 75","memo":"주유소","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 137-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 148","memo":"근린생활시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 211-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 231-1","memo":"천안향교","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 234-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 271-10","memo":"도시개발사업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 325-1","memo":"자동차 차고지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 327","memo":"닥터드림","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 365","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 396-1","memo":"근린생활시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 54-2","memo":"근린생활시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 산29","memo":"노인복지시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 산29, 산30, 산31, 산49","memo":"키즈카페","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 산65-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 유량동 산82-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 청당동 528","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 청수동24-1","memo":"주차장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 교천리 91","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 교촌리 산28-22","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 교촌리 산28-27. 산9","memo":"노인복지주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 교촌리 산9","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕전리 111","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕전리 114-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕전리 454","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕전리 산111","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕전리 산23-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도장리 325-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도장리 산36","memo":"산업단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도장리 산48-1","memo":"약15000평개발가능","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도장리 산54","memo":"정맥저촉지역","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도장리 산72-1, 산13","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 동리 71-11","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 동평리 35-22","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼성리 204-1","memo":"주기장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 서흥리 249-1","memo":"농가주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 서흥리 381-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 서흥리 산56-1","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 소사리 121-1","memo":"대지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 소사리 187-4","memo":"영흥 산업환경","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 소사리 266-13","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 소사리 266-6","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 소사리 산60-1","memo":"영흥산업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 소사리 산72-1","memo":"이용하석재공장뒤","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 송전리 319","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 송전리 산31","memo":"개간","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 102-2 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 107-19","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 139-4","memo":"근린생활시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 226-5","memo":"근린생활시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 382-7","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 457-26","memo":"점용허가","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 산41-7,107-19 .산33-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 산63-1","memo":"임대주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 산80-2","memo":"동우1차 금북정맥지역","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신계리 산84-3","memo":"보류","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운전리 298-4 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운전리 376-2","memo":"공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운전리 91-5","memo":"전원주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운전리 산16-1","memo":"토지분할","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 응원리 114-15","memo":"연립주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 응원리 241-13","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 응원리 243","memo":"삼보산업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 응원리 67-1 (81)","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 응원리 산13","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 응원리 산4-1","memo":"단독주택지개발","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 응원리 산51-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 지산리 260","memo":"농촌체류형쉼터","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 지산리43-17","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 천정리 108-17","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 천정리 108-31","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 천정리 149-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 천정리 88-6","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 천정리 산19-1","memo":"공장, 물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 천정리 산28-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 천정리 산33-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 광덕리 531-1 일원","memo":"전무님","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 광덕리 711-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 광덕리 산291","memo":"덕운산업개발","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 광덕리 산337-23","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대덕리 216","memo":"농가주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 163-1","memo":"새한환경","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 매당리 산22","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 매당리 산33","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 무학리 3","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 무학리 산127-7","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 무학리 산54-2","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 무학리 산61-1 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 무학리 산97","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보산원리 644-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보산원리 산162_김학준 주무관","memo":"김학준 주무관","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보산원리 산73-10","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신덕리 155","memo":"공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신덕리 205","memo":"수목장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신덕리 206-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신덕리 산60-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 원덕리 395-1","memo":"캠핑장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 원덕리 공장 6만평(산149.151-2.151-5)","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 원덕리 산151-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 원덕리 산29-2 태양광 김욱기","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 원덕리 산30-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 지장리 산20","memo":"석산","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 지장리 산23-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 지장리 산24-2","memo":"염소방목장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 지장리 산63-1_ 석산개발 신장섭","memo":"석산개발 신장섭","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 지장리 석산개발 산6-2","memo":"신장섭","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 행정리 144","memo":"(주)동양테이프","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 행정리 산22-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 광덕리 331","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 광덕리 389-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 광덕리 442-3","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구도리 산18","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 구도리 산86","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕성리 36","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕성리 산21","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 덕성리 산32-4","memo":"공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 동산리 산 88","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 동산리 산 94","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 동산리 산14","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 송연리 산32-1","memo":"산업단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 106","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 451","memo":"농가창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 538-23","memo":"주말농장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 산 50","memo":"재활용공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 산 81-1, 산 95-1","memo":"신창전기 주변","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 산48","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 산80-1","memo":"묘지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 산89-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 산89-2외","memo":"산지개간","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 수남리 산92-4","memo":"폐기물처리시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 죽계리 216","memo":"소매점","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 행암리 393","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 행암리 396-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 행암리 산 85-7","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 행암리 산19","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 화계리 산40-8","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 화덕리 102-11","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 화덕리 571","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 화덕리 산20-18","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 화덕리 산48-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 화덕리 산58","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 화덕리 산67-1.산15-4.102-11","memo":"모그린주변","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가전리 188-3","memo":"다가구주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가전리 350-1","memo":"자동차 경기장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가전리 475-14","memo":"기술대옆 약25000평","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가전리 565-3","memo":"부경주변","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가전리 산13-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가전리 산20-1","memo":"전원주택단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 관성리 494-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 관성리 산 4-29","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 관성리 산 8-1 일원","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 관성리 산 8-6","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도원리 산 34-20","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도원리 산24-27임","memo":"양계장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 도원리 산34-56","memo":"개간허가 스마트팜","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 매성리 산 48-1, 12","memo":"이은광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 매성리 산24","memo":"한빛태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 병천리 14","memo":"농가창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 병천리 205-1","memo":"성지건축","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 병천리 682-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 병천리 산1-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 병천리 산18-11","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 병천리 산2-2","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉항리 194-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉항리 431","memo":"단독주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉항리 444-12","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉항리 산 32-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉항리 산76-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 송정리 431-4","memo":"강재형공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 송정리 산 20-1 (단지계획) 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 송정리 산 20-9","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 송정리 산 41-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 탑원리 산 9-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 납안리 193-13","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 납안리 270-54","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 납안리 369","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 납안리 413-7","memo":"노인복지주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 납안리 493-1","memo":"CA우건","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 납안리 산18","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 606-2 외 3개소","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 612","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 652","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 산144","memo":"농가주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 산166","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 산171","memo":"석산","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 산21","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대평리 산28","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 명덕리 340-1","memo":"전원주택단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 명덕리 374-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 명덕리 447","memo":"조재욱 법무사","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 명덕리 산98-1","memo":"21세기 부동산","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 사담리 316-1","memo":"성광산업-단독주택단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 사담리 산5-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 상동리 산2-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 상동리 산28","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 양곡리 산100","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 양곡리 산103-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용암리 161-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용암리 401-8","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용암리 산25-2","memo":"전원주택단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용암리 산44-1","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운용리 산100-1","memo":"자동차 경기장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운용리 산134. 산100-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운용리 산21, 산52","memo":"태양광. 관광농원","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 운용리 산52","memo":"종중묘지검토","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 은지리 171-9 일원","memo":"전원주택단지-이상곤","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 은지리 산1-7","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 은지리 산35-8","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 전곡리 61-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대정리 산7, 산15-5","memo":"대정저수지 전원주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대화리 328","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대흥리 427-1","memo":"물류창고, 삼익물류","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대흥리 472-37","memo":"구거점용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대흥리 481-93 외 (천수테이프주변)","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대흥리 481-93 천수테이프 초안","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 대흥리 산30","memo":"개발비산정","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉양리 572-1","memo":"펠릿공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉양리 산100-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉양리 산104-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 봉양리 산4-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 석곡리 107-3","memo":"종이신화","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 석곡리 298-8, 산48-1","memo":"공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 석곡리 산48-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 486-7","memo":"대진글라스","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 산22-1","memo":"성심원옆","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 산30","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 산42-1","memo":"(주)마이크로컨텍솔루션 1종근린생활시설(소매점)","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 산53-1","memo":"고속도로옆 기허가","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 산66","memo":"대진그라스옆","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 산70-1","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신사리 산74-1","memo":"두성 3만평 윗부지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용원리 298-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용원리 50","memo":"덕운산업 온천단지주변","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용원리 산36-5","memo":"김현주","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용원리 산61-1","memo":"용원1지구엽","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용원리 산70-2","memo":"김화열","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용원리 산79-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 발산리 529-5","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 발산리 산44","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 속창리 159-9","memo":"상미식품","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 속창리 172-1","memo":"상록CC","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 속창리 65","memo":"송유관 이설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 속창리 산24-1","memo":"상미식품","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신풍리 155","memo":"안성전기","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신풍리 산21-4","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 신풍리 산35-1","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 장산리 530-3 (공장부지) 548-3","memo":"한펠","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 장산리 640-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 장산리 산16-1","memo":"농고실습장엽땅","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 장산리 산16-15","memo":"아성공조","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 장산리 산48-3","memo":"박물관","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 장산리 산48-37","memo":"1천평 공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 장산리 산48-46","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 해정리 418-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 해정리 산55(공장기허가지).산17-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가송리 141-6","memo":"발전시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 가송리 산81-7","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 남관리 54-2","memo":"폐기물처리시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 두남리 산58","memo":"토석채취허가","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 미죽리 산18-1","memo":"상수도사업소옆","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 미죽리 산42-3, 산32-1","memo":"엘지옆.물류창고 검토","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 미죽리 산71-1. 산47-1","memo":"물류창고.공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 미죽리 산80-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보성리 569","memo":"제이에스전선","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보성리 593","memo":"높은뜻 씨앗학교","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보성리 771","memo":"풍세 산업단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보성리 산13-26","memo":"주택사업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 보성리 산35-1","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 삼태리 182-15","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 102","memo":"지구단위","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 307","memo":"양근석","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 37-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 448-23","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 853-23","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 853-29","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 산1-3","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 산54, 448-14","memo":"장원건축","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 용정리 산70-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 풍서리 166-2(근생) 산26-3","memo":"투구봉 산림욕장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 동남구 풍서리 산6-28, 산6-3","memo":"풍세산단주변물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 두정동 393-11","memo":"정금","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 두정동 402-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 두정동 405-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 두정동 61-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 256-10","memo":"일봉공원","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 27","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 290","memo":"도시개발사업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 325","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 34-1","memo":"백석지구 더 샵 아파트","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 44-7","memo":"도시계획시설결정","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 537-3","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 54-25","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 54-4","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 589-8","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 596","memo":"백석 오성지구 도시개발사업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 604","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 백석동 604-16","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 부대동 141-13","memo":"골프연습장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 부대동 144","memo":"도시개발사업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 부대동 354-4","memo":"도시개발사업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 부대동 57-32","memo":"전원주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 불당동 1797","memo":"아산탕정지구","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 불당동 1943","memo":"충남국제컨벤션센터-계룡건설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 불당동 236-6","memo":"봉서도시자연공원구역","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 118-2","memo":"취락지구","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 16-7","memo":"강산코리아컨설팅","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 181-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 214-14","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 287-3 45-42, 부대동","memo":"쿠첸 및 레이크골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 287-3","memo":"쿠첸","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 340","memo":"번영로가구타운","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 35","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 37-3","memo":"쿠첸 및 레이크골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 39-11","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 474-4","memo":"동진철강","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성성동 90-1","memo":"레밸확인","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성정동 111-58","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 성정동 212-6","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신당동 198-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신당동 237-22","memo":"천안공전주변","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신당동 408","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신당동 636","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신당동 산1, 67-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신당동 산1..산24-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 쌍용동 122-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 쌍용동 218","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 쌍용동 산12-1","memo":"미주건축","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 106-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 143-5","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 188-1","memo":"농가창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 346-13","memo":"승마장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 346-16_주식회사 강산","memo":"주식회사 강산","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 346-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 360-33(현대스틸), 346-4","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 368-6_성성동 287-7","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 370-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 370-10","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 370-15","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 481-3","memo":"씨알건축","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 업성동 514-5","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 차암동 22-12","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 차암동 24-11","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 모전리 100-13","memo":"성거모전지구","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 모전리 229-5","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 모전리 240-2","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 모전리 산 5-1","memo":"김대중","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 문덕리 1-17","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석교리 266-1","memo":"자원순환시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석교리 산20","memo":"공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 소우리 115","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 소우리 133","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 소우리 193","memo":"직산아파트","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 소우리 296-3","memo":"골프연습장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 소우리 산26-1","memo":"지구단위","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신월리 275-1","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신월리 316-2","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오목리 109-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오목리 12-12","memo":"발전소","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오목리 123-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오목리 88-1","memo":"오목지 용도폐지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오목리 산34. 14-17","memo":"공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오목리 산6-80","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오색당리 132-27","memo":"물류창고허가지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오색당리 162-131","memo":"물류센터","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 오색당리 76-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 요방리 243-1","memo":"물류단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 요방리 산21","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 요방리 산22-3","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 정촌리 228-10","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 정촌리 82","memo":"GM","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 천흥리 산44","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 천흥리 산63-1","memo":"단독주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군동리 273-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군동리 345-6","memo":"한국 엠씨","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군동리 77","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군동리 산3-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군서리 209","memo":"공장용지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군서리 27-1","memo":"물류단지 3만평","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군서리 28-3","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군서리 292","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 군서리 299-13","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 남산리 271-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 남산리 273-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 남산리 335-10","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 남산리 9-20, 180-4","memo":"고물상","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 남산리 9-8 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 남산리 97-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 남산리 산83-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 마정리 253-15","memo":"성장관리구역 공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 마정리 492","memo":"마정공단최영안공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 마정리 산102-3","memo":"일반창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 마정리 산28-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 마정리 산31","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 마정리 산68-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 마정리 산70-12","memo":"마정공단북측","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 모시리 119 토지분할","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 모시리 253-76","memo":"근생","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 부송리 산26","memo":"산업단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 부송리 산27-1","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 2-12","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 243","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 259-5","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 5","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 556","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 59-1","memo":"노인복지주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 72-19","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 삼은리 78-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 상덕리 47-3","memo":"유정수","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 상덕리 산15-1, 113-1, 113-4","memo":"식품공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석곡리 139-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석곡리 21-9  일원","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석곡리 27","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석곡리 52-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석곡리 산14-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 석곡리 산4-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 수헐리 16-8(주거+자연녹지)공동주택 등 손사장","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신갈리 5-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신갈리 59-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신갈리 산10","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신갈리 산15-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신갈리 산22-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 자은가리 166-6","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 판정리 320","memo":"삼육식품","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 판정리 364-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 판정리 4-1","memo":"농업용창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 판정리 70-1","memo":"가스판매업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 판정리 산24-19","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 가산리 116-4","memo":"목장용지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 가산리 358-3","memo":"축구종합센터","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 가산리 409-8","memo":"양근석","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 가산리 산101일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 가산리 산33","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 가산리 산49-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 가산리 산52-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 기로리 171-12","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 기로리 331-1 농가주택(김용현)","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 도림리 344","memo":"동광기공","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 도림리 산12-1","memo":"경사X","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 독정리 108-1","memo":"쿠첸","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 독정리 118-4 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 독정리 140 일원","memo":"소매점","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 독정리 6-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 독정리 94","memo":"코오롱글로텍","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 산정리 225","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 수헐리 41-12","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 시장리 273","memo":"허원식씨","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 시장리 산37-1","memo":"폐기물처리업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 시장리 산8-3","memo":"더케이피엠","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신두리 110","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신두리 219","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 신두리 92-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 양대리 32-11","memo":"LG 생활건강 부회장 별장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 양대리 33-18","memo":"도로진출입","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 양대리 85-5","memo":"서운교차로, 물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 양대리 산23-10","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 양대리5-4","memo":"농어촌 관광단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 연곡리 566","memo":"물류창고","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 용정리 266, 255","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 용정리 304","memo":"건명","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 용정리 347-5","memo":"가스판매업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 용정리 산13-1","memo":"에땅 뒤","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 용정리 산30-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 유리 23-5 (2)","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 유리 23-5","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 유리 25-9","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 유리 27-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 유리 342","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 유리 산30-1","memo":"신두리 물류단지일부","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 호당리 227-8","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 호당리 305","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 호당리 산50-10","memo":"폐기물처리업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 홍천리 산12-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 홍천리 산13","memo":"삼광유리","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 천안시 서북구 효계리 92-3","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 권곡동 96-2","memo":"방명철","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 방축동 155","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 법곡동 278","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신인동 347-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 남성리 582-4","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 온천동 14-21","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 온천동 306-38","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 용화동 442-3","memo":"아산용화남산지구","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 장존동 338-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 초사동 18","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 공수리 361","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 공수리 756","memo":"세차장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 세출리 413-32","memo":"도시계획시설결정","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 수철리 60-17","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 수철리 산69-1","memo":"관광농원 등","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 중리 산1-8","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 회룡리 47-5","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 회룡리 478-7","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 대동리 산17-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 대동리 산17-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 방현리 126","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 서원리 70-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 기곡리 140-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신언리 산63-29외(금산리 산19-25외)","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 둔포리 산13-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 염작리 100-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 염작리 194-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 운교리 산3-12","memo":"물류센터","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 군덕리 279-10","memo":"지구단위계획","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신동리 산2-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신동리 산2-28","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 유곡리 산93-1","memo":"수목장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 종곡리 243-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 평촌리 산49","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신봉리 170 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신봉리 177-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신봉리 511-12","memo":"HRS공장증설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신현리 168-12","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신현리 214-2","memo":"자동차관련시설","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 아산리 284-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 아산리 산28-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 아산리 산31","memo":"아산평택항 중고차 수출입복합단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 월선리 347-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 덕지리 산20_김기영, 010-3461-9229","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 덕지리 산20","memo":"세경","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동암리 334-19","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동암리 419-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동암리 산82-2","memo":"방명철","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동천리 178-44","memo":"이은광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동천리 323","memo":"하늘빛골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 산동리 324-3","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 산동리 781","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 산동리 926","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 산동리 산4","memo":"두성","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 삼거리 10-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 삼거리 226-11","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 소동리 16-8","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 소동리 282","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 소동리 산4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 송촌리 190-35","memo":"단독주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신수리 406-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신수리 산108","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신수리 산31-1","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 신정리 산28-1","memo":"개간","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 쌍룡리 160-1","memo":"양근석","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 쌍룡리 297-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 쌍룡리 산2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 쌍암리 117","memo":"최영안","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 원남리 9-1","memo":"양근석","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 월랑리 5-1","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 월랑리 산73-1","memo":"묘지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 음봉면 삼거리 10-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 의식리 26-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 걸매리 1058","memo":"양근석","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 갈산리 63","memo":"관광농원","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동산리 27-14","memo":"관광농원","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동산리 32-22","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 동산리 산26-2","memo":"양근석","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 매곡리 776-1","memo":"탕정지구","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 명암리 140-2","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 호산리 557-23","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 호산리 산14","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 호산리 산20","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 아산시 호산리 산42","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 계룡면 기산리 산70, 향지리 산13","memo":"골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 계룡면 양화리 557-1","memo":"단독주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 계룡면 유평리 산27","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 계룡면 향지리 산13","memo":"골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 사곡면 계실리 461-4 일원","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 산 32-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 신관동 36-13 외1필지","memo":"연립주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 유구읍 동해리 580, 산63-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 이인면 운암리 산40- 보류","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 정안면 대산리 산113","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 공주시 정안면 화봉리 산27-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 논산시 연산면 연산리 510-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 대호지면 적서리 5-24","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 석문면 교로리 15-1","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 석문면 장고항리 산101-16, 삼봉리 산235-19","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 석문면 초락도리 981","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 송악읍 가학리 산5-12","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 순성면 본리,광천리 2-31","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 순성면 아찬리 259-4","memo":"단독주택단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 당진시 신평면 거산리 57-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 보령시 미산면 도화담리 산36-3","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 보령시 천북면 하만리 산74-1","memo":"현우용","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 서산시 대산읍 대산리 90-28","memo":"공동주택","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 서산시 팔봉면 어송리 산57-1","memo":"골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 금산군 군북면 상곡리 411-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 금산군 금북면 상곡리 948-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 부여군 부여군 부여읍 송곡리 39","memo":"사슴농장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 예산군 고덕면 몽곡리 452-3","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 예산군 대술면 장복리 121-4","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 예산군 신암면 신종리 210-5_다인건축사사무소","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 예산군 예산읍 관작리 산7-4","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 예산군 예산읍 신례원리 433  일원","memo":"충남테크노파크","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 예산군 오가면 월곡리 195-4","memo":"고무장갑공장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 청양군 운곡면 신대리 산195-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 태안군 남면 당암리 산 64-1","memo":"","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 태안군 안면읍 중장리 1167-2","memo":"캠핑장 외","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 태안군 양잠리 산237","memo":"태양광","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 태안군 태안읍 평천리 740","memo":"에이플러스씨엠","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 홍성군 갈산면 행산리 320-4","memo":"파크골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 홍성군 금마면 덕정리 538-9","memo":"동물장묘업","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 홍성군 금마면 송암리 산60","memo":"단독주택단지","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 홍성군 장곡면 옥계리 산86-11","memo":"골프장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 홍성군 장곡면 천태리 산8-1","memo":"신장섭","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 홍성군 홍복읍 봉신리 10-23","memo":"골프연습장","lat":0,"lng":0},{"sido":"충청남도","address":"충청남도 홍성군 홍북읍 내덕리 327-18","memo":"농어촌관광단지","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 청주시 서원구 남이면 갈원리 산36-1","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 청주시 흥덕구 가경동 697","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 청주시 흥덕구 옥산면 국사리 산30","memo":"농축산물 물류센터","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 청주시 흥덕구 옥산면 오산리 산5일원","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 청주시 흥덕구 옥산면 장동리 462","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 괴산군 덕평리 산61-1","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 옥천군 건진리 산2-1","memo":"송유관 이설","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 옥천군 원동리 900","memo":"송유관 이설","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 음성군 차평리 144-15","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 진천군 연곡리 산22-6","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 진천군 장관리 332-3","memo":"","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 진천군 신계리 산81-1","memo":"자동차 경기장","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 진천군 용계리 산30-26","memo":"골프장","lat":0,"lng":0},{"sido":"충청북도","address":"충청북도 충주시 직동 198-9","memo":"","lat":0,"lng":0},{"sido":"강원도","address":"강원도 영월군 무릉도원면 운학리 산 461","memo":"","lat":0,"lng":0},{"sido":"강원도","address":"강원도 평창군 방림면 방림리 산728-1","memo":"단독주택","lat":0,"lng":0},{"sido":"경기도","address":"경기도 가평군 청평면 청평리 산 81-18","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 남양주시 오남읍 양지리 산51","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 안성시 삼죽면 율곡리 24-1","memo":"안성삼죽농장","lat":0,"lng":0},{"sido":"경기도","address":"경기도 안성시 서운면 신기리 51-1","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 안성시 원곡면 반제리 400-3","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 여주시 강천면 도전리 산118-1","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 여주시 능서면 왕대리 992-78","memo":"물류 창고","lat":0,"lng":0},{"sido":"경기도","address":"경기도 용인시 처인구 고림동 산120-1","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 용인시 처인구(공장)백암면 백봉리 596-1","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 용인시 처인구(태양광)백암면 고안리 산104-1","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 이천시 신둔면 용면리 산1-1","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 평택시 포승읍 신영리 371-3 일원","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 하남시 신장동 148-1 - 김대중","memo":"","lat":0,"lng":0},{"sido":"경기도","address":"경기도 화성시 서신면 홍법리 17-7","memo":"","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 밀양시 단장면 단장리 818-5  일원","memo":"O","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 밀양시 삼랑진읍 율동리 산 137-5  일원","memo":"O","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 밀양시 삼랑진읍 미전리 276-17  일원","memo":"O","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 밀양시 상남면 동산리 1090-1  일원","memo":"△","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 김해시 한림면 안하리 1448-1  일원","memo":"△","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 김해시 한림면 명동리 1050-1  일원","memo":"△","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 울산 울주군 삼남면 방기리 342-30  일원","memo":"△","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 양산시 하북면 삼감리 33 일원","memo":"△","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 김해시 진영읍 하계리 산 57-6  일원","memo":"△","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 밀양시 삼랑진읍 송지리 산 64-2  일원","memo":"△","lat":0,"lng":0},{"sido":"경상남도","address":"경상남도 경남 일원 물류센터 [에땅 검토] 경남 밀양시 삼랑진읍 용전리 521-4  일원","memo":"△","lat":0,"lng":0},{"sido":"경상북도","address":"경상북도 경산시 하양읍 청천리 294","memo":"송유관 이설","lat":0,"lng":0},{"sido":"경상북도","address":"경상북도 구미시 장천면 상림리 산 80-1","memo":"골프장","lat":0,"lng":0},{"sido":"경상북도","address":"경상북도 영양군 입암면 병옥지구(산14-1)","memo":"관광농원","lat":0,"lng":0},{"sido":"전라남도","address":"전라남도 구례군 간전면 삼산리 산59","memo":"석산","lat":0,"lng":0},{"sido":"전라남도","address":"전라남도 보성군 율어면 선암리 산210-1","memo":"관광농원","lat":0,"lng":0},{"sido":"전라남도","address":"전라남도 해남군 화원면 후산리 산287-1","memo":"태양광","lat":0,"lng":0},{"sido":"세종특별자치시","address":"세종특별자치시 전의면 관정리 428","memo":"","lat":0,"lng":0},{"sido":"세종특별자치시","address":"세종특별자치시 전의면 달전리 323-1","memo":"폐기물처리시설(매립)","lat":0,"lng":0},{"sido":"세종특별자치시","address":"세종특별자치시 전의면 동교리 산64-8","memo":"","lat":0,"lng":0},{"sido":"세종특별자치시","address":"세종특별자치시 전의면 유천리 438","memo":"","lat":0,"lng":0},{"sido":"세종특별자치시","address":"세종특별자치시 전의면 유천리 74-2","memo":"동양테이프","lat":0,"lng":0},{"sido":"세종특별자치시","address":"세종특별자치시 전의면 유천리 84-1","memo":"동양테이프","lat":0,"lng":0},{"sido":"세종특별자치시","address":"세종특별자치시 전의면 읍내리 76-15","memo":"","lat":0,"lng":0}];
+var GEO_KEY='sj_geo_v1', ADD_KEY='sj_fj_v5';
+var map=null,clusterer=null,ov=null,labels=[],added=[],inited=false,cadOn=false;
+var listData=[],shown=0,activeAddr='';
+
+/* ── 탭 ── */
+var tabIds={map:'mapPanel',links:'linksPanel',rate:'ratePanel',calc:'calcPanel'};
+function sw(tab){
+  Object.keys(tabIds).forEach(function(k){
+    var el=document.getElementById(tabIds[k]);
+    if(el){el.className=k===tab?'panel on':'panel';}
+  });
+  /* mapPanel은 flex 레이아웃 필요 */
+  var mp=document.getElementById('mapPanel');
+  if(mp)mp.style.display=tab==='map'?'flex':'none';
+  /* 다른 패널은 block */
+  ['linksPanel','ratePanel','calcPanel'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.display=(tabIds[tab]===id)?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  var tabs=['map','links','rate','calc'];
+  var idx=tabs.indexOf(tab);
+  var tabEls=document.querySelectorAll('.tab');
+  if(tabEls[idx])tabEls[idx].classList.add('on');
+  if(tab==='map'&&map)try{kakao.maps.event.trigger(map,'resize');}catch(e){}
+}
+
+/* ── 지도 초기화 ── */
+function initMap(){
+  inited=true;
+  added=loadAdded();
+  var cache=loadGeoCache();
+  FJ_DATA.forEach(function(d){
+    if((!d.lat||d.lat===0)&&cache[d.address]){d.lat=cache[d.address][0];d.lng=cache[d.address][1];}
+  });
+  map=new kakao.maps.Map(document.getElementById('map'),{center:new kakao.maps.LatLng(36.6,127.2),level:9});
+  map.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.BOTTOMRIGHT);
+  clusterer=new kakao.maps.MarkerClusterer({map:map,averageCenter:true,minLevel:4,
+    styles:[
+      {width:'36px',height:'36px',background:'rgba(229,62,62,.9)',color:'#fff',textAlign:'center',lineHeight:'36px',borderRadius:'50%',fontSize:'12px',fontWeight:'800',border:'2px solid #fff'},
+      {width:'44px',height:'44px',background:'rgba(197,48,48,.95)',color:'#fff',textAlign:'center',lineHeight:'44px',borderRadius:'50%',fontSize:'13px',fontWeight:'800',border:'2px solid #fff'},
+      {width:'52px',height:'52px',background:'rgba(155,28,28,.95)',color:'#fff',textAlign:'center',lineHeight:'52px',borderRadius:'50%',fontSize:'14px',fontWeight:'800',border:'2px solid #fff'}
+    ]
+  });
+  kakao.maps.event.addListener(map,'zoom_changed',function(){
+    var lv=map.getLevel();
+    labels.forEach(function(l){try{l.setMap(lv<=7?map:null);}catch(e){}}); 
+  });
+  kakao.maps.event.addListener(map,'rightclick',function(me){
+    new kakao.maps.services.Geocoder().coord2Address(me.latLng.getLng(),me.latLng.getLat(),function(res,status){
+      if(status!==kakao.maps.services.Status.OK)return;
+      var addr=(res[0].road_address?res[0].road_address.address_name:res[0].address.address_name)||'';
+      showPop(addr,me.latLng);
+    });
+  });
+  geocodePending();
+  doFilter();
+}
+
+/* ── 팝업 ── */
+function popHtml(addr){
+  var enc=encodeURIComponent(addr);
+  var safe=addr.replace(/&/g,'&amp;');
+  return '<div class="pop">'
+    +'<div class="pop-addr">'+safe+'</div>'
+    +'<div class="pop-btns">'
+    +'<button class="pop-copy" data-addr="'+safe+'">주소복사</button>'
+    +'<a href="https://map.kakao.com/?q='+enc+'" target="_blank" class="pop-kakao">카카오맵↗</a>'
+    +'<a href="https://www.eum.go.kr" target="_blank" class="pop-eum">토지이음↗</a>'
+    +'<button class="pop-close" onclick="closeOv()">✕</button>'
+    +'</div></div>';
+}
+function showPop(addr,pos){
+  closeOv();
+  ov=new kakao.maps.CustomOverlay({content:popHtml(addr),position:pos,yAnchor:1.5,zIndex:200});
+  ov.setMap(map);
+}
+function closeOv(){if(ov){ov.setMap(null);ov=null;}}
+document.addEventListener('click',function(e){
+  if(e.target&&e.target.dataset&&e.target.dataset.addr){
+    navigator.clipboard&&navigator.clipboard.writeText(e.target.dataset.addr);
+    e.target.textContent='복사됨';var t=e.target;setTimeout(function(){t.textContent='주소복사';},1500);
+  }
+});
+
+/* ── 마커 ── */
+function mkMarker(loc){
+  if(!loc.lat||!loc.lng)return null;
+  var pos=new kakao.maps.LatLng(loc.lat,loc.lng);
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="22" height="30" viewBox="0 0 22 30"><path d="M11 0C6.03 0 2 4.03 2 9c0 6.75 9 21 9 21s9-14.25 9-21C20 4.03 15.97 0 11 0z" fill="#e53e3e"/><circle cx="11" cy="9" r="4" fill="#fff"/></svg>';
+  var img=new kakao.maps.MarkerImage('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),new kakao.maps.Size(22,30),{offset:new kakao.maps.Point(11,30)});
+  var mk=new kakao.maps.Marker({position:pos,image:img});
+  if(loc.memo){
+    var lbl=new kakao.maps.CustomOverlay({content:'<div style="position:relative;left:14px;bottom:2px;background:rgba(30,30,30,.8);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;white-space:nowrap;pointer-events:none;font-family:sans-serif;">'+loc.memo+'</div>',position:pos,yAnchor:0,zIndex:100});
+    lbl.setMap(map);mk._lbl=lbl;
+  }
+  kakao.maps.event.addListener(mk,'click',function(){
+    activateItem(loc.address);
+    var memoHtml=loc.memo?'<div class="pop-memo">'+loc.memo+'</div>':'';
+    closeOv();
+    ov=new kakao.maps.CustomOverlay({
+      content:'<div class="pop"><div class="pop-addr">'+loc.address+'</div>'+memoHtml+'<div class="pop-btns"><button class="pop-copy" data-addr="'+loc.address.replace(/&/g,'&amp;')+'">주소복사</button><a href="https://map.kakao.com/?q='+encodeURIComponent(loc.address)+'" target="_blank" class="pop-kakao">카카오맵↗</a><a href="https://www.eum.go.kr" target="_blank" class="pop-eum">토지이음↗</a><button class="pop-close" onclick="closeOv()">✕</button></div></div>',
+      position:pos,yAnchor:1.5,zIndex:200
+    });
+    ov.setMap(map);
+  });
+  return mk;
+}
+
+/* ── 렌더/필터 ── */
+function doFilter(){
+  var sido=(document.getElementById('selSido')||{}).value||'';
+  var sigun=(document.getElementById('selSigun')||{}).value||'';
+  var type=(document.getElementById('selType')||{}).value||'';
+  var kw=((document.getElementById('kw')||{}).value||'').trim();
+  window._kw=kw;
+  var src=FJ_DATA.concat(added);
+  var list=src.filter(function(l){
+    return(!sido||(l.address||'').indexOf(sido)>=0)
+      &&(!sigun||(l.address||'').indexOf(sigun)>=0)
+      &&(!type||(l.memo||'').indexOf(type)>=0)
+      &&(!kw||(l.address||'').indexOf(kw)>=0||(l.memo||'').indexOf(kw)>=0)
+      &&l.lat&&l.lng;
+  });
+  if(!clusterer){renderList(list);return;}
+  labels.forEach(function(l){try{l.setMap(null);}catch(e){}}); labels=[];
+  clusterer.clear(); closeOv();
+  var mks=list.map(function(l){var m=mkMarker(l);if(m&&m._lbl)labels.push(m._lbl);return m;}).filter(Boolean);
+  clusterer.addMarkers(mks);
+  var st=document.getElementById('stat');if(st)st.textContent=list.length+'개';
+  if(list.length>0&&list.length<=500){
+    var b=new kakao.maps.LatLngBounds();
+    list.forEach(function(l){b.extend(new kakao.maps.LatLng(l.lat,l.lng));});
+    try{map.setBounds(b,80);}catch(e){}
+  }
+  renderList(list);
+}
+function doReset(){
+  ['selSido','selType','kw'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var sg=document.getElementById('selSigun');if(sg){sg.value='';sg.style.display='none';}
+  doFilter();
+}
+
+/* ── 시군 연동 ── */
+var SIGUN={
+  '충청남도':['천안시','아산시','공주시','논산시','당진시','보령시','서산시','금산군','부여군','서천군','청양군','홍성군','예산군','태안군'],
+  '충청북도':['청주시','충주시','제천시','보은군','옥천군','영동군','증평군','진천군','괴산군','음성군','단양군'],
+  '경기도':['수원시','성남시','용인시','안양시','부천시','평택시','안산시','고양시','남양주시','파주시','이천시','안성시','화성시','여주시','가평군','양평군'],
+  '세종특별자치시':[],'강원도':['춘천시','원주시','강릉시','동해시','속초시','삼척시'],
+  '경상북도':['포항시','경주시','김천시','안동시','구미시','경산시'],
+  '경상남도':['창원시','진주시','김해시','밀양시','거제시','양산시'],
+  '전라남도':['목포시','여수시','순천시','나주시'],'전라북도':['전주시','군산시','익산시','정읍시']
+};
+function updateSigun(){
+  var sido=document.getElementById('selSido').value;
+  var sg=document.getElementById('selSigun');if(!sg)return;
+  var list=SIGUN[sido]||[];
+  sg.innerHTML='<option value="">시·군 전체</option>';
+  list.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;sg.appendChild(o);});
+  sg.style.display=(sido&&list.length)?'':'none';
+}
+
+/* ── 리스트 ── */
+function renderList(list){
+  listData=list;shown=0;
+  var el=document.getElementById('listBody');
+  var cnt=document.getElementById('listCount');
+  if(cnt)cnt.textContent=list.length+'개';
+  if(!el)return;
+  el.innerHTML='';
+  if(!list.length){el.innerHTML='<div style="padding:40px 12px;text-align:center;color:#9ca3af;font-size:12.5px;">검색 결과 없음</div>';return;}
+  appendList(Math.min(200,list.length));
+  el.onscroll=function(){if(el.scrollTop+el.clientHeight>=el.scrollHeight-40&&shown<listData.length)appendList(Math.min(200,listData.length-shown));};
+}
+function appendList(count){
+  var el=document.getElementById('listBody');
+  if(!el)return;
+  var frag=document.createDocumentFragment();
+  var kw=window._kw||'';
+  var end=shown+count;
+  for(var i=shown;i<end;i++){
+    var loc=listData[i];
+    var d=document.createElement('div');
+    d.className='li'+(loc.address===activeAddr?' on':'');
+    d.dataset.addr=loc.address;
+    var dispAddr=loc.address;
+    var dispMemo=loc.memo||'';
+    if(kw){
+      var re=new RegExp('('+kw.replace(/[-[\]{}()*+?.,\^$|#\s]/g,'\$&')+')','gi');
+      dispAddr=dispAddr.replace(re,'<mark style="background:#fef08a;border-radius:2px;">$1</mark>');
+      if(dispMemo)dispMemo=dispMemo.replace(re,'<mark style="background:#fef08a;border-radius:2px;">$1</mark>');
+    }
+    var tag=loc.memo?'<span class="tag">'+dispMemo+'</span>':'';
+    var badge=loc._added?'<span class="badge-new">추가</span>':'';
+    d.innerHTML='<div class="dot"></div>'
+      +'<div class="li-body"><div class="addr">'+dispAddr+'</div><div style="margin-top:3px;">'+tag+badge+'</div></div>'
+      +(loc._added?'<button class="del">✕</button>':'<button class="edit">✎</button>');
+    (function(l,item){
+      var del=item.querySelector('.del');
+      var edit=item.querySelector('.edit');
+      if(del)del.onclick=function(e){e.stopPropagation();if(!confirm('삭제?'))return;added=added.filter(function(x){return x.address!==l.address;});saveAdded(added);doFilter();};
+      if(edit)edit.onclick=function(e){e.stopPropagation();var nm=prompt('메모 수정:',l.memo||'');if(nm===null)return;l.memo=nm.trim();if(l._added)saveAdded(added);doFilter();};
+      item.onclick=function(e){
+        if(e.target.classList.contains('del')||e.target.classList.contains('edit'))return;
+        activateItem(l.address);
+        if(map&&l.lat&&l.lng){map.panTo(new kakao.maps.LatLng(l.lat,l.lng));map.setLevel(4);}
+        var memoHtml=l.memo?'<div class="pop-memo">'+l.memo+'</div>':'';
+        closeOv();
+        ov=new kakao.maps.CustomOverlay({
+          content:'<div class="pop"><div class="pop-addr">'+l.address+'</div>'+memoHtml+'<div class="pop-btns"><button class="pop-copy" data-addr="'+l.address.replace(/&/g,'&amp;')+'">주소복사</button><a href="https://map.kakao.com/?q='+encodeURIComponent(l.address)+'" target="_blank" class="pop-kakao">카카오맵↗</a><a href="https://www.eum.go.kr" target="_blank" class="pop-eum">토지이음↗</a><button class="pop-close" onclick="closeOv()">✕</button></div></div>',
+          position:new kakao.maps.LatLng(l.lat,l.lng),yAnchor:1.5,zIndex:200
+        });
+        ov.setMap(map);
+      };
+    })(loc,d);
+    frag.appendChild(d);
+  }
+  el.appendChild(frag);shown=end;
+}
+function activateItem(addr){
+  activeAddr=addr;
+  document.querySelectorAll('.li').forEach(function(el){
+    if(el.dataset.addr===addr){el.classList.add('on');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
+    else el.classList.remove('on');
+  });
+}
+
+/* ── 추가 ── */
+function toggleAdd(){var p=document.getElementById('addPanel');if(p)p.style.display=p.style.display==='block'?'none':'block';}
+function doAdd(){
+  var addr=(document.getElementById('addAddr').value||'').trim();
+  var memo=(document.getElementById('addMemo').value||'').trim();
+  if(!addr){alert('주소를 입력하세요.');return;}
+  new kakao.maps.services.Geocoder().addressSearch(addr,function(res,status){
+    if(status!==kakao.maps.services.Status.OK){alert('주소를 찾을 수 없습니다.');return;}
+    added.push({sido:'',address:addr,memo:memo,lat:parseFloat(res[0].y),lng:parseFloat(res[0].x),_added:true});
+    saveAdded(added);doFilter();
+    document.getElementById('addAddr').value='';document.getElementById('addMemo').value='';toggleAdd();
+  });
+}
+
+/* ── 지도 컨트롤 ── */
+function setType(t){
+  if(!map)return;
+  var nb=document.getElementById('btnNormal'),sb=document.getElementById('btnSky');
+  if(t==='sky'){map.setMapTypeId(kakao.maps.MapTypeId.HYBRID);if(nb){nb.style.background='#fff';nb.style.color='#374151';nb.style.fontWeight='600';}if(sb){sb.style.background='#0b111e';sb.style.color='#fff';sb.style.fontWeight='700';}}
+  else{map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);if(nb){nb.style.background='#0b111e';nb.style.color='#fff';nb.style.fontWeight='700';}if(sb){sb.style.background='#fff';sb.style.color='#374151';sb.style.fontWeight='600';}}
+}
+function toggleCad(){
+  if(!map)return;cadOn=!cadOn;var b=document.getElementById('btnCad');
+  if(cadOn){map.addOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);if(b){b.classList.add('on');b.textContent='지적도 ON';}}
+  else{map.removeOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);if(b){b.classList.remove('on');b.textContent='지적도';}}
+}
+function goAddr(){
+  var q=(document.getElementById('mapSearch').value||'').trim();
+  if(!q||!map)return;
+  new kakao.maps.services.Geocoder().addressSearch(q,function(res,status){
+    if(status===kakao.maps.services.Status.OK&&res[0]){map.setCenter(new kakao.maps.LatLng(res[0].y,res[0].x));map.setLevel(4);}
+    else alert('주소를 찾을 수 없습니다.');
+  });
+}
+
+/* ── CSV 내보내기 ── */
+function exportCSV(){
+  var src=FJ_DATA.concat(added);
+  var csv='﻿번호,주소,메모,위도,경도
+'+src.map(function(l,i){return(i+1)+',"'+(l.address||'').replace(/"/g,'""')+'","'+(l.memo||'').replace(/"/g,'""')+'",'+(l.lat||'')+','+(l.lng||'');;}).join('
+');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  var dt=new Date();a.download='SJMap_'+dt.getFullYear()+('0'+(dt.getMonth()+1)).slice(-2)+('0'+dt.getDate()).slice(-2)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+/* ── localStorage ── */
+function loadGeoCache(){try{return JSON.parse(localStorage.getItem(GEO_KEY)||'{}');}catch(e){return{};}}
+function saveGeoCache(c){try{localStorage.setItem(GEO_KEY,JSON.stringify(c));}catch(e){}}
+function loadAdded(){try{return JSON.parse(localStorage.getItem(ADD_KEY)||'[]');}catch(e){return[];};}
+function saveAdded(d){try{localStorage.setItem(ADD_KEY,JSON.stringify(d));}catch(e){}}
+
+/* ── 지오코딩 ── */
+function geocodePending(){
+  var cache=loadGeoCache();
+  FJ_DATA.forEach(function(d){if((!d.lat||d.lat===0)&&cache[d.address]){d.lat=cache[d.address][0];d.lng=cache[d.address][1];}});
+  var pending=FJ_DATA.filter(function(d){return!d.lat||d.lat===0;});
+  if(!pending.length){doFilter();return;}
+  var prog=document.getElementById('geoProgress'),txt=document.getElementById('geoText');
+  if(prog)prog.style.display='block';
+  var gc=new kakao.maps.services.Geocoder(),idx=0,total=pending.length;
+  doFilter();
+  function next(){
+    if(idx>=total){saveGeoCache(cache);doFilter();if(prog)prog.style.display='none';return;}
+    var item=pending[idx++];
+    if(txt)txt.textContent=idx+'/'+total;
+    gc.addressSearch(item.address,function(res,status){
+      if(status===kakao.maps.services.Status.OK&&res[0]){
+        item.lat=parseFloat(res[0].y);item.lng=parseFloat(res[0].x);
+        cache[item.address]=[item.lat,item.lng];
+        if(idx%30===0){saveGeoCache(cache);doFilter();}
+      }
+      setTimeout(next,70);
+    });
+  }
+  next();
+}
+
+/* ── 계산기 ── */
+function calcArea(from){
+  var m=parseFloat(document.getElementById('m2').value)||0;
+  var p=parseFloat(document.getElementById('py').value)||0;
+  if(from==='m2'){document.getElementById('py').value=m?(m/3.30579).toFixed(2):'';document.getElementById('ha').value=m?(m/10000).toFixed(4)+' ha':'';}
+  else{document.getElementById('m2').value=p?(p*3.30579).toFixed(2):'';document.getElementById('ha').value=p?((p*3.30579)/10000).toFixed(4)+' ha':'';}
+}
+function calcFAR(){
+  var land=parseFloat(document.getElementById('land').value)||0;
+  var build=parseFloat(document.getElementById('build').value)||0;
+  var fl=parseFloat(document.getElementById('floor').value)||0;
+  document.getElementById('bcr').textContent=land?(build/land*100).toFixed(1):'-';
+  document.getElementById('far').textContent=land?(fl/land*100).toFixed(1):'-';
+}
+function calcSlope(){
+  var h=parseFloat(document.getElementById('sh').value)||0;
+  var d=parseFloat(document.getElementById('sd').value)||0;
+  if(h&&d){document.getElementById('sdeg').textContent=(Math.atan(h/d)*180/Math.PI).toFixed(1);document.getElementById('spct').textContent=(h/d*100).toFixed(1);}
+  else{document.getElementById('sdeg').textContent='-';document.getElementById('spct').textContent='-';}
+}
+
+/* ── 시작 ── */
+kakao.maps.load(initMap);
+</script>
+</body>
+</html>
